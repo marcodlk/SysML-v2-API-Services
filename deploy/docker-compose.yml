@@ -1,0 +1,38 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: ./deploy/Dockerfile
+    image: sysml2-api:${SYSML2_API_VERSION:-latest}
+      #command: ['sbt', 'run']
+    command: 'tail -F anything'
+      #restart: always
+    ports:
+    - 0.0.0.0:9900:9000
+    env_file:
+    - .env
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres
+    hostname: sysml2-db
+    ports:
+      - 127.0.0.1:9432:5432
+    environment:
+      POSTGRES_PASSWORD: "mysecretpassword"
+      POSTGRES_USER: "postgres"
+      POSTGRES_DB: "sysml2"
+    volumes:
+      - sysml2-db-data:/var/lib/postgresql/data
+    restart: always
+    healthcheck:
+      test: pg_isready -U sysml2
+      interval: 2s
+      timeout: 3s
+      retries: 40
+
+volumes:
+  sysml2-db-data:
+    name: sysml2-db-data
